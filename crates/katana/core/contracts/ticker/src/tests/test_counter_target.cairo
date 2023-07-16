@@ -17,8 +17,8 @@ mod CounterTarget {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState) {
-        self.ticker.write(get_caller_address());
+    fn constructor(ref self: ContractState, ticker: ContractAddress) {
+        self.ticker.write(ticker);
         self.counter.write(0);
     }
 

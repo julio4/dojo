@@ -39,10 +39,14 @@ mod ticker_tests {
         (address0, depositor, operator)
     }
 
-    fn deploy_counter_target(address: ContractAddress) -> ContractAddress {
+    fn deploy_counter_target(depositor: ContractAddress, address: ContractAddress) -> ContractAddress {
         fakeCaller(address);
+
+        let mut calldata = ArrayTrait::new();
+        depositor.serialize(ref calldata);
+
         let (contract_address, _) = deploy_syscall(
-            CounterTarget::TEST_CLASS_HASH.try_into().unwrap(), 0, ArrayTrait::new().span(), false
+            CounterTarget::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
         )
             .unwrap();
         contract_address
@@ -66,7 +70,7 @@ mod ticker_tests {
         let ticker = ITickerDispatcher { contract_address: ticker_address };
 
         fakeCaller(operator);
-        let target = deploy_counter_target(operator);
+        let target = deploy_counter_target(depositor, operator);
 
         ticker.set_target(target);
     }
@@ -109,7 +113,7 @@ mod ticker_tests {
         let (ticker_address, depositor, operator) = setup();
         let ticker = ITickerDispatcher { contract_address: ticker_address };
 
-        let target = deploy_counter_target(depositor);
+        let target = deploy_counter_target(depositor, depositor);
 
         fakeCaller(operator);
         ticker.set_target(target);
