@@ -20,6 +20,7 @@ lazy_static! {
     // Predefined class hashes
 
     pub static ref DEFAULT_ACCOUNT_CONTRACT_CLASS_HASH: StarkFelt = stark_felt!("0x04d07e40e93398ed3c76981e72dd1fd22557a78ce36c0515f679e27f0bb5bc5f");
+    pub static ref ACCOUNT_WITHOUT_VALIDATION_CONTRACT_CLASS_HASH: StarkFelt = stark_felt!("0x0637492f32e92415c0fa1f5f4b6c86b192b9f279b7a5a2df8155f39be3c4d61d");
     pub static ref ERC20_CONTRACT_CLASS_HASH: StarkFelt = stark_felt!("0x02a8846878b6ad1f54f6ba46f5f40e11cee755c677f130b2c4b60566c9003f1f");
     pub static ref UDC_CLASS_HASH: StarkFelt = stark_felt!("0x07b3e05f48f0c69e4a65ce5e076a66271a527aff2c34ce1083ec6e1526997a69");
     pub static ref TICKER_CONTRACT_CLASS_HASH: StarkFelt = stark_felt!("0x03c11e3b183a22d22c6c99a2c9e5262dce98edd9a7c00f58301aba11cd954935");
@@ -29,6 +30,7 @@ lazy_static! {
     pub static ref ERC20_CONTRACT: ContractClass = get_contract_class(include_str!("../contracts/compiled/erc20.json"));
     pub static ref UDC_CONTRACT: ContractClass = get_contract_class(include_str!("../contracts/compiled/universal_deployer.json"));
     pub static ref DEFAULT_ACCOUNT_CONTRACT: ContractClass = get_contract_class(include_str!("../contracts/compiled/account.json"));
+    pub static ref ACCOUNT_WITHOUT_VALIDATION_CONTRACT: ContractClass = get_contract_class(include_str!("../contracts/compiled/account_without_validation.json"));
     pub static ref TICKER_CONTRACT: ContractClass = get_contractv1_class(include_str!("../contracts/compiled/ticker_Ticker.casm.json"));
 
     pub static ref DEFAULT_PREFUNDED_ACCOUNT_BALANCE: StarkFelt = stark_felt!("0x3635c9adc5dea00000"); // 10^21
