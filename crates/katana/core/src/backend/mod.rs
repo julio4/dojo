@@ -1,4 +1,5 @@
 use anyhow::Result;
+use blockifier::abi::abi_utils::selector_from_name;
 use blockifier::block_context::BlockContext;
 use blockifier::execution::entry_point::{
     CallEntryPoint, CallInfo, EntryPointExecutionContext, ExecutionResources,
@@ -17,10 +18,10 @@ use blockifier::transaction::transactions::ExecutableTransaction;
 use convert_case::{Case, Casing};
 use starknet::core::types::{FeeEstimate, FieldElement, StateUpdate, TransactionStatus};
 use starknet_api::block::{BlockHash, BlockNumber, BlockTimestamp, GasPrice};
-use starknet_api::core::{ClassHash, ContractAddress, GlobalRoot, PatriciaKey};
+use starknet_api::core::{ClassHash, ContractAddress, GlobalRoot, PatriciaKey, Nonce};
 use starknet_api::hash::{StarkFelt, StarkHash};
-use starknet_api::transaction::{DeclareTransactionV0V1, DeployTransaction, TransactionHash};
-use starknet_api::{patricia_key, stark_felt};
+use starknet_api::transaction::{Calldata, DeclareTransactionV0V1, DeployTransaction, Fee, InvokeTransaction, InvokeTransactionV1, TransactionHash};
+use starknet_api::{calldata, patricia_key, stark_felt};
 use tracing::{info, trace, warn};
 
 pub mod block;
@@ -34,7 +35,7 @@ use block::{StarknetBlock, StarknetBlocks};
 use config::StarknetConfig;
 use transaction::{ExternalFunctionCall, StarknetTransaction, StarknetTransactions};
 
-use crate::accounts::PredeployedAccounts;
+use crate::accounts::{Account, PredeployedAccounts};
 use crate::backend::state::{MemDb, StateExt};
 use crate::block_context::BlockContextGenerator;
 use crate::constants::{
@@ -47,6 +48,11 @@ use crate::util::{
     get_current_timestamp,
 };
 
+pub struct TickerContext {
+    pub last_nonce: u32,
+    pub runner: Account,
+}
+
 pub struct StarknetWrapper {
     pub config: StarknetConfig,
     pub blocks: StarknetBlocks,
@@ -56,6 +62,7 @@ pub struct StarknetWrapper {
     pub state: MemDb,
     pub predeployed_accounts: PredeployedAccounts,
     pub pending_cached_state: CachedState<MemDb>,
+    pub ticker_context: TickerContext,
 }
 
 impl StarknetWrapper {
@@ -78,6 +85,8 @@ impl StarknetWrapper {
         .expect("should be able to generate accounts");
         predeployed_accounts.deploy_accounts(&mut state);
 
+        let ticker_context = TickerContext{last_nonce: 1, runner: predeployed_accounts.accounts[0].clone(),};
+
         Self {
             state,
             config,
@@ -87,6 +96,7 @@ impl StarknetWrapper {
             block_context_generator,
             pending_cached_state: pending_state,
             predeployed_accounts,
+            ticker_context,
         }
     }
 
@@ -246,6 +256,85 @@ impl StarknetWrapper {
         self.update_block_context();
         self.blocks.pending_block = Some(self.create_empty_block());
         self.pending_cached_state = CachedState::new(self.state.clone());
+        self.tick();
+    }
+
+    pub fn tick(&mut self) {
+        info!("TICKING");
+        let runner = &self.ticker_context.runner;
+    
+        let entry_point_selector = selector_from_name("apply_tick");
+        let execute_calldata = calldata![
+            *TICKER_CONTRACT_ADDRESS,
+            entry_point_selector.0,
+            stark_felt!(0_u8)
+        ];
+    
+        // 0x5449434b: TICK
+        let ticker_tx_hash = stark_felt!(format!("0x5449434b00000000{:x}", self.ticker_context.last_nonce).as_str());
+        let transaction = Transaction::AccountTransaction(AccountTransaction::Invoke(
+            InvokeTransaction::V1(InvokeTransactionV1 {
+                sender_address: runner.account_address,
+                calldata: execute_calldata,
+                transaction_hash: TransactionHash(ticker_tx_hash.into()),
+                nonce: Nonce(self.ticker_context.last_nonce.into()),
+                max_fee: Fee(0),
+                ..Default::default()
+            }),
+        ));
+    
+        let api_tx = convert_blockifier_tx_to_starknet_api_tx(&transaction);
+        
+        let res = execute_transaction(transaction, &mut self.pending_cached_state, &self.block_context);
+        match res {
+            Ok(exec_info) => {
+                trace!(
+                    "Transaction resource usage: {}",
+                    pretty_print_resources(&exec_info.actual_resources)
+                );
+
+                let status = if exec_info.revert_error.is_some() {
+                    // TODO: change the status to `Reverted` status once the variant is implemented.
+                    TransactionStatus::Rejected
+                } else {
+                    TransactionStatus::Pending
+                };
+
+                let starknet_tx = StarknetTransaction::new(
+                    api_tx.clone(),
+                    status,
+                    Some(exec_info),
+                    // TODO: if transaction is `Reverted`, then the `revert_error` should be
+                    // stored. but right now `revert_error` is not of type
+                    // `TransactionExecutionError`, so we store `None` instead.
+                    None,
+                );
+
+                let pending_block = self.blocks.pending_block.as_mut().expect("no pending block");
+
+                // Append successful tx and it's output to pending block.
+                pending_block.insert_transaction(api_tx);
+                pending_block.insert_transaction_output(starknet_tx.output());
+
+                self.store_transaction(starknet_tx);
+
+             
+            }
+
+            Err(exec_err) => {
+                warn!("Transaction validation error: {exec_err:?}");
+
+                let tx = StarknetTransaction::new(
+                    api_tx,
+                    TransactionStatus::Rejected,
+                    None,
+                    Some(exec_err),
+                );
+
+                self.store_transaction(tx);
+            }
+        }
+        self.ticker_context.last_nonce += 1;
     }
 
     pub fn call(
