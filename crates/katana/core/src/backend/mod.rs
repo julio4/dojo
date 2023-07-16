@@ -93,13 +93,17 @@ impl StarknetWrapper {
 
         let mut ticker_seed = config.seed.clone();
         ticker_seed[0] += 1;
-        let ticker_depositor: Account = PredeployedAccounts::initialize(
+        let ticker_predeployed_account = PredeployedAccounts::initialize(
             1,
             ticker_seed,
             *DEFAULT_PREFUNDED_ACCOUNT_BALANCE,
             None,
-            None
-        ).unwrap().accounts[0].clone();
+            Some(false)
+        )
+        .expect("");
+        ticker_predeployed_account.deploy_accounts(&mut state);
+        let ticker_depositor = ticker_predeployed_account.accounts[0].clone();
+
         let _ = state.set_ticker_depositor(ticker_depositor.account_address);
         let _ = state.set_ticker_operator(ticker_depositor.account_address);
         let ticker_context = TickerContext { last_nonce: 1, runner: ticker_depositor };
@@ -279,7 +283,6 @@ impl StarknetWrapper {
     }
 
     pub fn tick(&mut self) {
-        info!("TICKING");
         let runner = &self.ticker_context.runner;
 
         let entry_point_selector = selector_from_name("apply_tick");
@@ -307,7 +310,7 @@ impl StarknetWrapper {
         match res {
             Ok(exec_info) => {
                 trace!(
-                    "Transaction resource usage: {}",
+                    "Tick! Transaction resource usage: {}",
                     pretty_print_resources(&exec_info.actual_resources)
                 );
 
