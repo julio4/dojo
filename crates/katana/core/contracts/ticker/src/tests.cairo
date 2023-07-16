@@ -63,4 +63,12 @@ mod ticker_tests {
         let ticker = deploy_ticker(get_caller_address());
         ticker.apply_tick();
     }
+
+    #[test]
+    #[available_gas(2000000000)]
+    fn test_set_target() {
+        let ticker = deploy_ticker(get_caller_address());
+        let new_target = deploy_target();
+        ticker.set_target(new_target);
+    }
 }
