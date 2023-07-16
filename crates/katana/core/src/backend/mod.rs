@@ -38,8 +38,8 @@ use crate::accounts::PredeployedAccounts;
 use crate::backend::state::{MemDb, StateExt};
 use crate::block_context::BlockContextGenerator;
 use crate::constants::{
-    DEFAULT_PREFUNDED_ACCOUNT_BALANCE, ERC20_CONTRACT_CLASS_HASH, FEE_TOKEN_ADDRESS, UDC_ADDRESS,
-    UDC_CLASS_HASH,
+    DEFAULT_PREFUNDED_ACCOUNT_BALANCE, ERC20_CONTRACT_CLASS_HASH, FEE_TOKEN_ADDRESS,
+    TICKER_CONTRACT_ADDRESS, TICKER_CONTRACT_CLASS_HASH, UDC_ADDRESS, UDC_CLASS_HASH,
 };
 use crate::sequencer_error::SequencerError;
 use crate::util::{
@@ -318,8 +318,11 @@ impl StarknetWrapper {
         self.pending_cached_state = CachedState::new(self.state.clone());
 
         let mut transactions = vec![];
-        let deploy_data =
-            vec![(*UDC_CLASS_HASH, *UDC_ADDRESS), (*ERC20_CONTRACT_CLASS_HASH, *FEE_TOKEN_ADDRESS)];
+        let deploy_data = vec![
+            (*UDC_CLASS_HASH, *UDC_ADDRESS),
+            (*ERC20_CONTRACT_CLASS_HASH, *FEE_TOKEN_ADDRESS),
+            (*TICKER_CONTRACT_CLASS_HASH, *TICKER_CONTRACT_ADDRESS),
+        ];
 
         deploy_data.into_iter().for_each(|(class_hash, address)| {
             let declare_tx = starknet_api::transaction::Transaction::Declare(

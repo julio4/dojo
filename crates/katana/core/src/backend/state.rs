@@ -11,8 +11,8 @@ use starknet_api::patricia_key;
 use starknet_api::state::StorageKey;
 
 use crate::constants::{
-    ERC20_CONTRACT, ERC20_CONTRACT_CLASS_HASH, FEE_TOKEN_ADDRESS, UDC_ADDRESS, UDC_CLASS_HASH,
-    UDC_CONTRACT,
+    ERC20_CONTRACT, ERC20_CONTRACT_CLASS_HASH, FEE_TOKEN_ADDRESS, TICKER_CONTRACT,
+    TICKER_CONTRACT_ADDRESS, TICKER_CONTRACT_CLASS_HASH, UDC_ADDRESS, UDC_CLASS_HASH, UDC_CONTRACT,
 };
 
 pub trait StateExt {
@@ -60,6 +60,7 @@ impl Default for MemDb {
         let mut state = MemDb { storage: HashMap::new(), classes: HashMap::new() };
         deploy_fee_contract(&mut state);
         deploy_universal_deployer_contract(&mut state);
+        deploy_ticker_contract(&mut state);
         state
     }
 }
@@ -264,6 +265,22 @@ fn deploy_universal_deployer_contract(state: &mut MemDb) {
     state.classes.insert(
         hash,
         ClassRecord { sierra_class: None, class: (*UDC_CONTRACT).clone(), compiled_hash },
+    );
+
+    state.storage.insert(
+        address,
+        StorageRecord { class_hash: hash, nonce: Nonce(1_u128.into()), storage: HashMap::new() },
+    );
+}
+
+fn deploy_ticker_contract(state: &mut MemDb) {
+    let address = ContractAddress(patricia_key!(*TICKER_CONTRACT_ADDRESS));
+    let hash = ClassHash(*TICKER_CONTRACT_CLASS_HASH);
+    let compiled_hash = CompiledClassHash(*TICKER_CONTRACT_CLASS_HASH);
+
+    state.classes.insert(
+        hash,
+        ClassRecord { sierra_class: None, class: (*TICKER_CONTRACT).clone(), compiled_hash },
     );
 
     state.storage.insert(
