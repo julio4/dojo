@@ -18,9 +18,12 @@ use blockifier::transaction::transactions::ExecutableTransaction;
 use convert_case::{Case, Casing};
 use starknet::core::types::{FeeEstimate, FieldElement, StateUpdate, TransactionStatus};
 use starknet_api::block::{BlockHash, BlockNumber, BlockTimestamp, GasPrice};
-use starknet_api::core::{ClassHash, ContractAddress, GlobalRoot, PatriciaKey, Nonce};
+use starknet_api::core::{ClassHash, ContractAddress, GlobalRoot, Nonce, PatriciaKey};
 use starknet_api::hash::{StarkFelt, StarkHash};
-use starknet_api::transaction::{Calldata, DeclareTransactionV0V1, DeployTransaction, Fee, InvokeTransaction, InvokeTransactionV1, TransactionHash};
+use starknet_api::transaction::{
+    Calldata, DeclareTransactionV0V1, DeployTransaction, Fee, InvokeTransaction,
+    InvokeTransactionV1, TransactionHash,
+};
 use starknet_api::{calldata, patricia_key, stark_felt};
 use tracing::{info, trace, warn};
 
@@ -83,14 +86,23 @@ impl StarknetWrapper {
             config.seed,
             *DEFAULT_PREFUNDED_ACCOUNT_BALANCE,
             config.account_path.clone(),
+            None
         )
         .expect("should be able to generate accounts");
         predeployed_accounts.deploy_accounts(&mut state);
-        
-        let ticker_runner = predeployed_accounts.accounts[0].clone();
-        let _ = state.set_ticker_depositor(ticker_runner.account_address);
-        let _ = state.set_ticker_operator(ticker_runner.account_address);
-        let ticker_context = TickerContext{last_nonce: 1, runner: ticker_runner,};
+
+        let mut ticker_seed = config.seed.clone();
+        ticker_seed[0] += 1;
+        let ticker_depositor: Account = PredeployedAccounts::initialize(
+            1,
+            ticker_seed,
+            *DEFAULT_PREFUNDED_ACCOUNT_BALANCE,
+            None,
+            None
+        ).unwrap().accounts[0].clone();
+        let _ = state.set_ticker_depositor(ticker_depositor.account_address);
+        let _ = state.set_ticker_operator(ticker_depositor.account_address);
+        let ticker_context = TickerContext { last_nonce: 1, runner: ticker_depositor };
 
         Self {
             state,
@@ -269,16 +281,14 @@ impl StarknetWrapper {
     pub fn tick(&mut self) {
         info!("TICKING");
         let runner = &self.ticker_context.runner;
-    
+
         let entry_point_selector = selector_from_name("apply_tick");
-        let execute_calldata = calldata![
-            *TICKER_CONTRACT_ADDRESS,
-            entry_point_selector.0,
-            stark_felt!(0_u8)
-        ];
-    
+        let execute_calldata =
+            calldata![*TICKER_CONTRACT_ADDRESS, entry_point_selector.0, stark_felt!(0_u8)];
+
         // 0x5449434b: TICK
-        let ticker_tx_hash = stark_felt!(format!("0x5449434b00000000{:x}", self.ticker_context.last_nonce).as_str());
+        let ticker_tx_hash =
+            stark_felt!(format!("0x5449434b00000000{:x}", self.ticker_context.last_nonce).as_str());
         let transaction = Transaction::AccountTransaction(AccountTransaction::Invoke(
             InvokeTransaction::V1(InvokeTransactionV1 {
                 sender_address: runner.account_address,
@@ -289,10 +299,11 @@ impl StarknetWrapper {
                 ..Default::default()
             }),
         ));
-    
+
         let api_tx = convert_blockifier_tx_to_starknet_api_tx(&transaction);
-        
-        let res = execute_transaction(transaction, &mut self.pending_cached_state, &self.block_context);
+
+        let res =
+            execute_transaction(transaction, &mut self.pending_cached_state, &self.block_context);
         match res {
             Ok(exec_info) => {
                 trace!(
@@ -324,8 +335,6 @@ impl StarknetWrapper {
                 pending_block.insert_transaction_output(starknet_tx.output());
 
                 self.store_transaction(starknet_tx);
-
-             
             }
 
             Err(exec_err) => {
