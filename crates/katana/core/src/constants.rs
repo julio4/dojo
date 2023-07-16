@@ -22,7 +22,7 @@ lazy_static! {
     pub static ref DEFAULT_ACCOUNT_CONTRACT_CLASS_HASH: StarkFelt = stark_felt!("0x04d07e40e93398ed3c76981e72dd1fd22557a78ce36c0515f679e27f0bb5bc5f");
     pub static ref ERC20_CONTRACT_CLASS_HASH: StarkFelt = stark_felt!("0x02a8846878b6ad1f54f6ba46f5f40e11cee755c677f130b2c4b60566c9003f1f");
     pub static ref UDC_CLASS_HASH: StarkFelt = stark_felt!("0x07b3e05f48f0c69e4a65ce5e076a66271a527aff2c34ce1083ec6e1526997a69");
-    pub static ref TICKER_CONTRACT_CLASS_HASH: StarkFelt = stark_felt!("0x01a2a32a4e8c2223f8578f35ea2d3429d2d7eae2392e69d19f353f1c749bc367");
+    pub static ref TICKER_CONTRACT_CLASS_HASH: StarkFelt = stark_felt!("0x03c11e3b183a22d22c6c99a2c9e5262dce98edd9a7c00f58301aba11cd954935");
 
     // Predefined contract classes
 
