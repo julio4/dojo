@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use blockifier::abi::abi_utils::get_storage_var_address;
+
 use blockifier::execution::contract_class::ContractClass;
 use blockifier::state::cached_state::CommitmentStateDiff;
 use blockifier::state::errors::StateError;
@@ -27,6 +29,18 @@ pub trait StateExt {
     fn apply_state<S>(&mut self, state: &mut S)
     where
         S: State + StateReader;
+}
+
+pub trait TickerExt {
+    fn set_ticker_depositor(
+        &mut self,
+        depositor: ContractAddress,
+    ) -> StateResult<()>;
+
+    fn set_ticker_operator(
+        &mut self,
+        operator: ContractAddress,
+    ) -> StateResult<()>;
 }
 
 #[derive(Clone, Debug, Default)]
@@ -238,6 +252,36 @@ impl StateReader for MemDb {
             .get(&class_hash)
             .map(|r| r.compiled_hash)
             .ok_or(StateError::UndeclaredClassHash(class_hash))
+    }
+}
+
+impl TickerExt for MemDb {
+    fn set_ticker_depositor(
+            &mut self,
+            depositor: ContractAddress,
+        ) -> StateResult<()> {
+        self.storage.entry(ContractAddress(patricia_key!(*TICKER_CONTRACT_ADDRESS))).and_modify(|r| {
+            r.storage.insert(
+                get_storage_var_address("depositor", &[])
+                    .unwrap(),
+                depositor.0.key().clone(),
+            );
+        });
+        Ok(())
+    }
+
+    fn set_ticker_operator(
+        &mut self,
+        operator: ContractAddress,
+    ) -> StateResult<()> {
+        self.storage.entry(ContractAddress(patricia_key!(*TICKER_CONTRACT_ADDRESS))).and_modify(|r| {
+            r.storage.insert(
+                get_storage_var_address("operator", &[])
+                .unwrap(),
+                operator.0.key().clone(),
+            );
+        });
+        Ok(())
     }
 }
 

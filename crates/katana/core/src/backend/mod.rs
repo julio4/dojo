@@ -51,6 +51,8 @@ use crate::util::{
     get_current_timestamp,
 };
 
+use self::state::TickerExt;
+
 pub struct TickerContext {
     pub last_nonce: u32,
     pub runner: Account,
@@ -98,6 +100,8 @@ impl StarknetWrapper {
             None,
             None
         ).unwrap().accounts[0].clone();
+        let _ = state.set_ticker_depositor(ticker_depositor.account_address);
+        let _ = state.set_ticker_operator(ticker_depositor.account_address);
         let ticker_context = TickerContext { last_nonce: 1, runner: ticker_depositor };
 
         Self {
