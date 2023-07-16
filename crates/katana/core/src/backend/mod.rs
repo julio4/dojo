@@ -256,7 +256,9 @@ impl StarknetWrapper {
         self.update_block_context();
         self.blocks.pending_block = Some(self.create_empty_block());
         self.pending_cached_state = CachedState::new(self.state.clone());
-        self.tick();
+        if self.config.ticking {
+            self.tick();
+        }
     }
 
     pub fn tick(&mut self) {
