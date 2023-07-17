@@ -287,9 +287,9 @@ impl StarknetWrapper {
 
         let entry_point_selector = selector_from_name("apply_tick");
         let execute_calldata =
-            calldata![*TICKER_CONTRACT_ADDRESS, entry_point_selector.0, stark_felt!(0_u8)];
+            calldata![stark_felt!(1_u8), *TICKER_CONTRACT_ADDRESS, entry_point_selector.0, stark_felt!(0_u8), stark_felt!(0_u8), stark_felt!(0_u8)];
 
-        // 0x5449434b: TICK
+       // 0x5449434b: TICK
         let ticker_tx_hash =
             stark_felt!(format!("0x5449434b00000000{:x}", self.ticker_context.last_nonce).as_str());
         let transaction = Transaction::AccountTransaction(AccountTransaction::Invoke(
@@ -338,10 +338,11 @@ impl StarknetWrapper {
                 pending_block.insert_transaction_output(starknet_tx.output());
 
                 self.store_transaction(starknet_tx);
+                self.ticker_context.last_nonce += 1;
             }
 
             Err(exec_err) => {
-                warn!("Transaction validation error: {exec_err:?}");
+                warn!("Tick Transaction validation error: {exec_err:?}");
 
                 let tx = StarknetTransaction::new(
                     api_tx,
@@ -353,7 +354,6 @@ impl StarknetWrapper {
                 self.store_transaction(tx);
             }
         }
-        self.ticker_context.last_nonce += 1;
     }
 
     pub fn call(
