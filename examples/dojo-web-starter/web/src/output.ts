@@ -4,27 +4,13 @@ import { defineComponent, Type as RecsType, World } from "@latticexyz/recs";
 
 export function defineContractComponents(world: World) {
   return {
-    Moves: (() => {
-      const name = "Moves";
+    GameStats: (() => {
+      const name = "GameStats";
       return defineComponent(
         world,
         {
-          remaining: RecsType.Number,
-        },
-        {
-          metadata: {
-            name: name,
-          },
-        }
-      );
-    })(),
-    Position: (() => {
-      const name = "Position";
-      return defineComponent(
-        world,
-        {
-          x: RecsType.Number,
-          y: RecsType.Number,
+          block_number: RecsType.Number,
+          tick_number: RecsType.Number,
         },
         {
           metadata: {
