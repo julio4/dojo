@@ -2,10 +2,11 @@ import "./App.css";
 import { useDojo } from "./DojoContext";
 import { useComponentValue } from "@dojoengine/react";
 import { Utils } from "@dojoengine/core";
+import { RyoEvents } from "./utils/event";
 
 function App() {
   const {
-    systemCalls: { initialize },
+    systemCalls: { initialize, tick },
     components: { GameStats },
   } = useDojo();
 
@@ -21,9 +22,9 @@ function App() {
         <button onClick={() => initialize()}>Initialize</button>
       </div>
 
-      {/* <div className="card">
-        <button onClick={() => start_game()}>Start Game</button>
-      </div> */}
+      <div className="card">
+        <button onClick={() => tick()}>Start Game</button>
+      </div>
     </>
   );
 }

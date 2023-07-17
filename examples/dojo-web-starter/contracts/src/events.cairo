@@ -14,3 +14,4 @@ struct GameInfo {
     block_number: u64,
     tick_number: u32,
 }
+
