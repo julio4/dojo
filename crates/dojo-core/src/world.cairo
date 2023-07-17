@@ -32,6 +32,7 @@ trait IWorld<T> {
     fn executor(self: @T) -> ContractAddress;
     fn delete_entity(ref self: T, component: felt252, query: Query);
     fn origin(self: @T) -> ContractAddress;
+    fn tick(ref self: T);
 
     fn is_owner(self: @T, account: ContractAddress, target: felt252) -> bool;
     fn grant_owner(ref self: T, account: ContractAddress, target: felt252);
@@ -351,6 +352,11 @@ mod world {
             }
 
             res
+        }
+
+        /// Executes the tick system if it is registered.
+        fn tick(ref self: ContractState) {
+            self.execute('tick', ArrayTrait::new().span());
         }
 
         /// Issues an autoincremented id to the caller.

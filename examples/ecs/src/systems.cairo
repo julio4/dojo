@@ -74,6 +74,25 @@ mod move {
     }
 }
 
+#[system]
+mod tick {
+    use array::ArrayTrait;
+    use box::BoxTrait;
+    use traits::Into;
+    use dojo::world::Context;
+
+    use dojo_examples::components::Position;
+    use dojo_examples::components::Moves;
+
+    fn execute(ctx: Context) {
+        let (position, moves) = get !(ctx.world, ctx.origin.into(), (Position, Moves));
+        set !(
+            ctx.world, ctx.origin.into(), (Moves { remaining: moves.remaining + 1 }, position)
+        );
+        return ();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use core::traits::Into;

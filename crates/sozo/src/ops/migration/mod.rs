@@ -276,6 +276,7 @@ where
     ws_config.ui().print_header(format!("# Systems ({})", systems.len()));
 
     let mut declare_output = vec![];
+    let mut is_tick = false;
 
     for s in strategy.systems.iter() {
         ws_config.ui().print(italic_message(&s.diff.name).to_string());
@@ -300,11 +301,16 @@ where
         }
 
         ws_config.ui().print_sub(format!("class hash: {:#x}", s.diff.local));
+
+        if s.diff.name == "tick" {
+            is_tick = true;
+        }
     }
 
     let world_address = strategy.world_address()?;
+    let world_contract = WorldContract::new(world_address, migrator);
 
-    let InvokeTransactionResult { transaction_hash } = WorldContract::new(world_address, migrator)
+    let InvokeTransactionResult { transaction_hash } = world_contract
         .register_systems(&systems.iter().map(|s| s.diff.local).collect::<Vec<_>>())
         .await
         .map_err(|e| anyhow!("Failed to register systems to World: {e}"))?;
@@ -314,6 +320,23 @@ where
         .map_err(MigrationError::<S, <P as Provider>::Error>::WaitingError);
 
     ws_config.ui().print_hidden_sub(format!("registered at: {transaction_hash:#x}"));
+
+    if is_tick {
+        // TODO check if ticking is enabled on target chain
+        ws_config.ui().print_hidden_sub("Tick system detected!");
+
+        // Call `set_target` on ticker contract at `0x71C`
+        let InvokeTransactionResult { transaction_hash } = world_contract
+            .register_tick_target()
+            .await
+            .map_err(|e| anyhow!("Failed to register tick target: {e}"))?;
+
+        let _ = TransactionWaiter::new(transaction_hash, migrator.provider())
+            .await
+            .map_err(MigrationError::<S, <P as Provider>::Error>::WaitingError);
+
+        ws_config.ui().print_hidden_sub(format!("Tick system registered to sequencer ticker contract at: {transaction_hash:#x}"));
+    }
 
     Ok(Some(RegisterOutput { transaction_hash, declare_output }))
 }

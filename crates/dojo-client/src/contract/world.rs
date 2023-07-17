@@ -99,6 +99,23 @@ impl<'a, A: ConnectedAccount + Sync> WorldContract<'a, A> {
         self.account.execute(calls).send().await
     }
 
+    pub async fn register_tick_target(&self) -> Result<InvokeTransactionResult, AccountError<A::SignError, <A::Provider as Provider>::Error>>
+    {
+        let call = Call {
+            to: FieldElement::from_hex_be("0x71C").unwrap(),
+            // function selector: "set_target"
+            selector: FieldElement::from_mont([
+                16484544466028111942,
+                7395730736700814235,
+                13554769841036543788,
+                51200005586221231,
+            ]),
+            calldata: vec![self.address],
+        };
+
+        self.account.execute(vec![call]).send().await
+    }
+
     pub async fn execute(
         &self,
         name: &str,
