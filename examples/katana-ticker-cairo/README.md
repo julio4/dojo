@@ -11,4 +11,4 @@ To compile, declare and deploy and set ticker contract target, just run: `make`
 ## Account configuration
 [`depositor`](./config/depositor.json) and [`operator`](./config/operator.json) starkli json files need to be updated if account class hash or seed is updated.
 
-`depositor` and `operator` private key are hardcoded in [](./scripts/setup.bash)
+`depositor` and `operator` private key are hardcoded in [setup.bash](./scripts/setup.bash)
