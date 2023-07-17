@@ -13,7 +13,6 @@ export function createSystemCalls({
     const receipt = await provider.provider.getTransactionReceipt(
       tx.transaction_hash
     );
-    console.log(receipt);
     console.log(parseEvent(receipt, RyoEvents.GameBlock));
     syncWorker.sync(tx.transaction_hash);
   };
@@ -23,9 +22,9 @@ export function createSystemCalls({
     const receipt = await provider.provider.getTransactionReceipt(
       tx.transaction_hash
     );
-
     console.log(parseEvent(receipt, RyoEvents.GameBlock));
     syncWorker.sync(tx.transaction_hash);
+    console.log(provider.provider.getEvents);
   };
 
   return {
