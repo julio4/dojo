@@ -1,4 +1,4 @@
-import { InvokeTransactionReceiptResponse, shortString } from "starknet";
+import { InvokeTransactionReceiptResponse, shortString, Event } from "starknet";
 
 export enum RyoEvents {
   GameBlock = "GameBlock",
@@ -34,4 +34,34 @@ export const parseEvent = (
       } as CreateEventData;
       throw new Error(`event parse not implemented: ${eventType}`);
   }
+};
+
+export const parseEvents = (
+  receipts: Event[],
+  eventType: RyoEvents
+): CreateEventData[] => {
+  const filteredEvents: CreateEventData[] = [];
+
+  for (const receipt of receipts) {
+    shortString.decodeShortString(receipt.keys.toString()) === eventType;
+
+    const raw =
+      shortString.decodeShortString(receipt.keys.toString()) === eventType;
+
+    if (raw) {
+      switch (eventType) {
+        case RyoEvents.GameBlock:
+          filteredEvents.push({
+            gameId: "Tick",
+            blockNumber: Number(receipt.data[0]),
+            tickerNumber: Number(receipt.data[1]),
+          });
+          break;
+        default:
+          throw new Error(`event parse not implemented: ${eventType}`);
+      }
+    }
+  }
+
+  return filteredEvents;
 };
