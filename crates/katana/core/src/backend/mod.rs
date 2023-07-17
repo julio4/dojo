@@ -105,7 +105,7 @@ impl StarknetWrapper {
         let ticker_depositor = ticker_predeployed_account.accounts[0].clone();
 
         let _ = state.set_ticker_depositor(ticker_depositor.account_address);
-        let _ = state.set_ticker_operator(ticker_depositor.account_address);
+        let _ = state.set_ticker_operator(predeployed_accounts.accounts[0].account_address);
         let ticker_context = TickerContext { last_nonce: 1, runner: ticker_depositor };
 
         Self {
