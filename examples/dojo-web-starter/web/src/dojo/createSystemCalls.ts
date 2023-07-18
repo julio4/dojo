@@ -17,13 +17,6 @@ export function createSystemCalls({
 }: SetupNetworkResult) {
   const initialize = async () => {
     const tx = await execute("initialize", []);
-<<<<<<< Updated upstream
-    const receipt = await provider.provider.getTransactionReceipt(
-      tx.transaction_hash
-    );
-    console.log(parseEvent(receipt, RyoEvents.GameBlock));
-=======
->>>>>>> Stashed changes
     syncWorker.sync(tx.transaction_hash);
   };
 
@@ -46,14 +39,8 @@ export function createSystemCalls({
       eventsList["events"],
       RyoEvents.GameBlock
     );
-<<<<<<< Updated upstream
-    console.log(parseEvent(receipt, RyoEvents.GameBlock));
-    syncWorker.sync(tx.transaction_hash);
-    console.log(provider.provider.getEvents);
-=======
 
     return filteredGameBlockEvents;
->>>>>>> Stashed changes
   };
 
   return {
