@@ -1,5 +1,11 @@
-import { SetupNetworkResult } from "./setupNetwork";
-import { BaseEventData, parseEvent, RyoEvents } from "../utils/event";
+import { SetupNetworkResult, WORLD_ADDRESS } from "./setupNetwork";
+import {
+  BaseEventData,
+  parseEvent,
+  parseEvents,
+  RyoEvents,
+  CreateEventData,
+} from "../utils/event";
 
 export type SystemCalls = ReturnType<typeof createSystemCalls>;
 
@@ -7,28 +13,52 @@ export function createSystemCalls({
   provider,
   execute,
   syncWorker,
+  signer,
 }: SetupNetworkResult) {
   const initialize = async () => {
     const tx = await execute("initialize", []);
+<<<<<<< Updated upstream
     const receipt = await provider.provider.getTransactionReceipt(
       tx.transaction_hash
     );
     console.log(parseEvent(receipt, RyoEvents.GameBlock));
+=======
+>>>>>>> Stashed changes
     syncWorker.sync(tx.transaction_hash);
   };
 
   const tick = async () => {
     const tx = await execute("tick", []);
-    const receipt = await provider.provider.getTransactionReceipt(
-      tx.transaction_hash
+    syncWorker.sync(tx.transaction_hash);
+  };
+
+  const listenRPC = async (): Promise<CreateEventData[]> => {
+    const lastBlock = await provider.provider.getBlock("latest");
+
+    let eventsList = await provider.provider.getEvents({
+      address: WORLD_ADDRESS,
+      from_block: { block_number: lastBlock.block_number - 2 },
+      to_block: { block_number: lastBlock.block_number },
+      chunk_size: 400,
+    });
+
+    const filteredGameBlockEvents: CreateEventData[] = parseEvents(
+      eventsList["events"],
+      RyoEvents.GameBlock
     );
+<<<<<<< Updated upstream
     console.log(parseEvent(receipt, RyoEvents.GameBlock));
     syncWorker.sync(tx.transaction_hash);
     console.log(provider.provider.getEvents);
+=======
+
+    return filteredGameBlockEvents;
+>>>>>>> Stashed changes
   };
 
   return {
     initialize,
     tick,
+    listenRPC,
   };
 }
