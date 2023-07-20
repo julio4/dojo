@@ -1,9 +1,9 @@
 use array::ArrayTrait;
 use dojo::SerdeLen;
 use debug::PrintTrait;
-use traits::{Into, TryInto, Default, Felt252DictValue};
+use traits::{Into, PartialEq};
 
-#[derive(Copy, Drop, Serde)]
+#[derive(PartialEq, Copy, Drop, Serde)]
 enum GameStateKind {
     Playing: (),
     Idle: (),
@@ -37,7 +37,7 @@ impl GameStatePrintTrait of PrintTrait<GameStateKind> {
     }
 }
 
-#[derive(Component, Copy, Drop, Serde, SerdeLen)]
+#[derive(Component, PartialEq, Copy, Drop, Serde, SerdeLen)]
 struct Game {
     id: u32,
     tick: u32,
@@ -47,8 +47,12 @@ struct Game {
 impl GamePrintTrait of PrintTrait<Game> {
     #[inline(always)]
     fn print(self: Game) {
+        'Game: '.print();
+        'id: '.print();
         self.id.print();
+        'tick: '.print();
         self.tick.print();
+        'state: '.print();
         self.state.print();
     }
 }

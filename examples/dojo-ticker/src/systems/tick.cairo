@@ -17,15 +17,19 @@ mod tick {
     }
 
     fn execute(ctx: Context) {
-        let game_id = ctx.world.uuid();
-        let game_sk: Query = game_id.into();
+        let game_id = 1;
 
-        let mut game: Game = get !(ctx.world, game_sk, Game);
+        let mut game: Game = get !(ctx.world, game_id.into(), Game);
 
         match game.state {
             GameStateKind::Playing(_) => {
                 game.tick += 1;
-                set !(ctx.world, game_sk, (game))
+
+                set !(
+                    ctx.world,
+                    game_id.into(),
+                    (Game { id: game.id, tick: game.tick, state: game.state,  })
+                )
 
                 let mut values = array::ArrayTrait::new();
                 serde::Serde::serialize(
